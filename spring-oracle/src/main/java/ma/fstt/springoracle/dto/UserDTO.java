@@ -1,6 +1,7 @@
 package ma.fstt.springoracle.dto;
 
 import lombok.Data;
+
 import java.util.Set;
 
 @Data
@@ -22,3 +23,4 @@ public class UserDTO {
         private boolean requireUpperCase;
     }
 }
+

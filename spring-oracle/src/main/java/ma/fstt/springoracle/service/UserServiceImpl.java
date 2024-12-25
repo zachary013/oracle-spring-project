@@ -51,19 +51,17 @@ public class UserServiceImpl implements UserService {
 
         jdbcTemplate.execute(sql.toString());
 
-        // Créer l'utilisateur dans notre base de données applicative
         User user = new User();
         user.setUsername(userDTO.getUsername());
         user.setDefaultTablespace(userDTO.getDefaultTablespace());
         user.setTemporaryTablespace(userDTO.getTemporaryTablespace());
         user.setQuotaLimit(userDTO.getQuotaLimit());
-        user.setPasswordExpiryDate(LocalDateTime.now().plusDays(90)); // Par défaut 90 jours
+        user.setPasswordExpiryDate(LocalDateTime.now().plusDays(90));
         user.setAccountLocked(false);
         user.setFailedLoginAttempts(0);
 
         user = userRepository.save(user);
 
-        // Appliquer les rôles si spécifiés
         if (userDTO.getRoles() != null) {
             userDTO.getRoles().forEach(role -> grantRole(userDTO.getUsername(), role));
         }
