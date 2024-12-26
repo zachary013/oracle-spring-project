@@ -192,57 +192,57 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void grantRole(String username, String roleName) {
         try {
-            // Convert both username and roleName to uppercase and add proper quoting
+            // First try to grant the role in Oracle
             String sql = String.format("GRANT \"%s\" TO \"%s\"",
                     roleName.toUpperCase(),
                     username.toUpperCase()
             );
             jdbcTemplate.execute(sql);
 
-            // Update the user's roles in the database
+            // If Oracle grant succeeds, update application database
             userRepository.findByUsername(username.toUpperCase())
-                    .ifPresentOrElse(user -> {
+                    .ifPresent(user -> {
+                        // Get or create role
                         Role role = roleRepository.findByName(roleName.toUpperCase())
-                                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                                .orElseGet(() -> {
+                                    Role newRole = new Role();
+                                    newRole.setName(roleName.toUpperCase());
+                                    return roleRepository.save(newRole);
+                                });
+
                         user.getRoles().add(role);
                         userRepository.save(user);
-                    }, () -> {
-                        throw new RuntimeException("User not found: " + username);
                     });
         } catch (Exception e) {
             throw new RuntimeException("Failed to grant role: " + e.getMessage(), e);
         }
     }
 
+
     @Override
     @Transactional
     public void revokeRole(String username, String roleName) {
         try {
-            // Check if the user has the role before revoking
+            // First try to revoke in Oracle
+            String sql = String.format("REVOKE \"%s\" FROM \"%s\"",
+                    roleName.toUpperCase(),
+                    username.toUpperCase()
+            );
+            jdbcTemplate.execute(sql);
+
+            // If Oracle revoke succeeds, update application database
             userRepository.findByUsername(username.toUpperCase())
-                    .ifPresentOrElse(user -> {
-                        if (user.getRoles().stream().noneMatch(r -> r.getName().equalsIgnoreCase(roleName))) {
-                            throw new RuntimeException("User does not have the specified role");
-                        }
-
-                        // Convert both username and roleName to uppercase and add proper quoting
-                        String sql = String.format("REVOKE \"%s\" FROM \"%s\"",
-                                roleName.toUpperCase(),
-                                username.toUpperCase()
-                        );
-                        jdbcTemplate.execute(sql);
-
-                        // Update the user's roles in the database
-                        Role role = roleRepository.findByName(roleName.toUpperCase())
-                                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-                        user.getRoles().remove(role);
-                        userRepository.save(user);
-                    }, () -> {
-                        throw new RuntimeException("User not found: " + username);
+                    .ifPresent(user -> {
+                        roleRepository.findByName(roleName.toUpperCase())
+                                .ifPresent(role -> {
+                                    user.getRoles().remove(role);
+                                    userRepository.save(user);
+                                });
                     });
         } catch (Exception e) {
             throw new RuntimeException("Failed to revoke role: " + e.getMessage(), e);
         }
     }
+
 
 }

@@ -1,3 +1,4 @@
+// src/main/java/ma/fstt/springoracle/service/RoleServiceImpl.java
 package ma.fstt.springoracle.service;
 
 import lombok.RequiredArgsConstructor;
@@ -18,27 +19,42 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public Role createRole(String roleName) {
-        String upperRoleName = roleName.toUpperCase();
-        if (roleRepository.findByName(upperRoleName).isPresent()) {
-            throw new RuntimeException("Role already exists: " + upperRoleName);
+        if (existsByName(roleName)) {
+            throw new RuntimeException("Role already exists: " + roleName);
         }
 
-        // Create Oracle role
-        jdbcTemplate.execute(String.format("CREATE ROLE \"%s\"", upperRoleName));
+        // Create role in Oracle
+        try {
+            String sql = String.format("CREATE ROLE \"%s\"", roleName.toUpperCase());
+            jdbcTemplate.execute(sql);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create Oracle role: " + e.getMessage());
+        }
 
-        // Create JPA entity
+        // Create role in application database
         Role role = new Role();
-        role.setName(upperRoleName);
+        role.setName(roleName.toUpperCase());
         return roleRepository.save(role);
     }
 
     @Override
     @Transactional
     public void deleteRole(String roleName) {
-        String upperRoleName = roleName.toUpperCase();
-        jdbcTemplate.execute(String.format("DROP ROLE \"%s\"", upperRoleName));
-        roleRepository.findByName(upperRoleName)
-                .ifPresent(role -> roleRepository.delete(role));
+        if (!existsByName(roleName)) {
+            throw new RuntimeException("Role does not exist: " + roleName);
+        }
+
+        // Drop role from Oracle
+        try {
+            String sql = String.format("DROP ROLE \"%s\"", roleName.toUpperCase());
+            jdbcTemplate.execute(sql);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete Oracle role: " + e.getMessage());
+        }
+
+        // Delete role from application database
+        roleRepository.findByName(roleName.toUpperCase())
+                .ifPresent(roleRepository::delete);
     }
 
     @Override
@@ -48,6 +64,6 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public boolean existsByName(String roleName) {
-        return roleRepository.findByName(roleName.toUpperCase()).isPresent();
+        return roleRepository.existsByName(roleName.toUpperCase());
     }
 }
