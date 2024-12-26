@@ -17,7 +17,7 @@ public class UserDTO {
     @Data
     public static class PasswordPolicy {
         private int expiryDays;
-        private int minLength;
+        private int minLength = 8;
         private boolean requireSpecialChar;
         private boolean requireNumber;
         private boolean requireUpperCase;

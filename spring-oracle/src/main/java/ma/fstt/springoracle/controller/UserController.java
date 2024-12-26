@@ -1,113 +1,85 @@
 package ma.fstt.springoracle.controller;
 
+import lombok.RequiredArgsConstructor;
+import ma.fstt.springoracle.dto.RoleRequest;
 import ma.fstt.springoracle.dto.UserDTO;
-import ma.fstt.springoracle.model.User;
+import ma.fstt.springoracle.model.OracleUser;
 import ma.fstt.springoracle.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    // Créer un utilisateur
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody UserDTO userDTO) {
-        User createdUser = userService.createUser(userDTO);
-        return ResponseEntity.ok(createdUser);
+    public ResponseEntity<OracleUser> createUser(@RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.createUser(userDTO));
     }
 
-    // Obtenir tous les utilisateurs
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
-
-    // Obtenir un utilisateur par son nom
-    @GetMapping("/{username}")
-    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
-        User user = userService.getUserByUsername(username);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
-    }
-
-    // Mettre à jour un utilisateur
     @PutMapping("/{username}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<OracleUser> updateUser(
             @PathVariable String username,
             @RequestBody UserDTO userDTO) {
-        User updatedUser = userService.updateUser(username, userDTO);
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok(userService.updateUser(username, userDTO));
     }
 
-    // Supprimer un utilisateur
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> deleteUser(@PathVariable String username) {
         userService.deleteUser(username);
         return ResponseEntity.ok().build();
     }
 
-    // Modifier le quota
-    @PutMapping("/{username}/quota")
-    public ResponseEntity<Void> modifyQuota(
-            @PathVariable String username,
-            @RequestParam String tablespace,
-            @RequestParam String quota) {
-        userService.modifyQuota(username, tablespace, quota);
+    @GetMapping("/{username}")
+    public ResponseEntity<OracleUser> getUser(@PathVariable String username) {
+        return userService.getUser(username)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<List<OracleUser>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PostMapping("/{username}/lock")
+    public ResponseEntity<Void> lockAccount(@PathVariable String username) {
+        userService.lockAccount(username);
         return ResponseEntity.ok().build();
     }
 
-    // Verrouiller un utilisateur
-    @PutMapping("/{username}/lock")
-    public ResponseEntity<Void> lockUser(@PathVariable String username) {
-        userService.lockUser(username);
+    @PostMapping("/{username}/unlock")
+    public ResponseEntity<Void> unlockAccount(@PathVariable String username) {
+        userService.unlockAccount(username);
         return ResponseEntity.ok().build();
     }
 
-    // Déverrouiller un utilisateur
-    @PutMapping("/{username}/unlock")
-    public ResponseEntity<Void> unlockUser(@PathVariable String username) {
-        userService.unlockUser(username);
-        return ResponseEntity.ok().build();
-    }
-
-    // Réinitialiser le mot de passe
-    @PutMapping("/{username}/reset-password")
+    @PostMapping("/{username}/password")
     public ResponseEntity<Void> resetPassword(
             @PathVariable String username,
-            @RequestBody Map<String, String> passwordMap) {
-        userService.resetPassword(username, passwordMap.get("newPassword"));
+            @RequestBody String newPassword) {
+        userService.resetPassword(username, newPassword);
         return ResponseEntity.ok().build();
     }
 
-    // Accorder un rôle
     @PostMapping("/{username}/roles")
-    public ResponseEntity<Void> grantRole(
+    public ResponseEntity<?> grantRole(
             @PathVariable String username,
-            @RequestBody Map<String, String> roleMap) {
-        userService.grantRole(username, roleMap.get("role"));
+            @RequestBody RoleRequest roleRequest) {
+        userService.grantRole(username, roleRequest.getRoleName());
         return ResponseEntity.ok().build();
     }
 
-    // Révoquer un rôle
-    @DeleteMapping("/{username}/roles/{role}")
-    public ResponseEntity<Void> revokeRole(
+    @DeleteMapping("/{username}/roles/{roleName}")
+    public ResponseEntity<?> revokeRole(
             @PathVariable String username,
-            @PathVariable String role) {
-        userService.revokeRole(username, role);
+            @PathVariable String roleName) {
+        userService.revokeRole(username, roleName);
         return ResponseEntity.ok().build();
-    }
-
-    // Obtenir les rôles d'un utilisateur
-    @GetMapping("/{username}/roles")
-    public ResponseEntity<List<String>> getUserRoles(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUserRoles(username));
     }
 }

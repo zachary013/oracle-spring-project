@@ -1,33 +1,28 @@
-// UserService.java
 package ma.fstt.springoracle.service;
 
 import ma.fstt.springoracle.dto.UserDTO;
-import ma.fstt.springoracle.model.User;
+import ma.fstt.springoracle.model.OracleUser;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
-    // Opérations CRUD de base
-    User createUser(UserDTO userDTO);
-    User updateUser(String username, UserDTO userDTO);
+    OracleUser createUser(UserDTO userDTO);
+    OracleUser updateUser(String username, UserDTO userDTO);
     void deleteUser(String username);
-    User getUserByUsername(String username);
-    List<User> getAllUsers();
+    Optional<OracleUser> getUser(String username);
+    List<OracleUser> getAllUsers();
 
-    // Opérations de gestion des quotas
-    void modifyQuota(String username, String tablespace, String quota);
-
-    // Opérations de gestion des comptes
-    void lockUser(String username);
-    void unlockUser(String username);
+    void lockAccount(String username);
+    void unlockAccount(String username);
     void resetPassword(String username, String newPassword);
+    void setQuota(String username, String tablespace, String quota);
 
-    // Opérations de gestion des rôles
-    void grantRole(String username, String role);
-    void revokeRole(String username, String role);
-    List<String> getUserRoles(String username);
+    boolean validatePasswordPolicy(String password, UserDTO.PasswordPolicy policy);
+    void updatePasswordExpiryDate(String username, int expiryDays);
+    void recordLoginAttempt(String username, boolean successful);
 
-    // Opérations de surveillance
-    boolean isUserLocked(String username);
-    int getFailedLoginAttempts(String username);
-    void updateFailedLoginAttempts(String username);
+    void grantRole(String username, String roleName);
+    void revokeRole(String username, String roleName);
 }

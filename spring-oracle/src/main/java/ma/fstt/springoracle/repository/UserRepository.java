@@ -1,74 +1,34 @@
 package ma.fstt.springoracle.repository;
 
-import ma.fstt.springoracle.model.User;
+import ma.fstt.springoracle.model.OracleUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<OracleUser, Long> {
+    Optional<OracleUser> findByUsername(String username);
+    boolean existsByUsername(String username);
 
-    // Basic queries
-    User findByUsername(String username);
-    List<User> findByAccountLocked(boolean locked);
+    @Modifying
+    @Query("UPDATE OracleUser u SET u.lastLoginDate = ?2 WHERE u.username = ?1")
+    void updateLastLoginDate(String username, LocalDateTime loginDate);
 
-    // Oracle system queries
-    @Query(value = "SELECT username FROM dba_users", nativeQuery = true)
-    List<String> findAllOracleUsernames();
+    @Modifying
+    @Query("UPDATE OracleUser u SET u.failedLoginAttempts = u.failedLoginAttempts + 1 WHERE u.username = ?1")
+    void incrementFailedLoginAttempts(String username);
 
-    @Query(value = "SELECT username FROM dba_users WHERE account_status = 'LOCKED'", nativeQuery = true)
-    List<String> findLockedOracleUsers();
+    @Modifying
+    @Query("UPDATE OracleUser u SET u.accountLocked = ?2 WHERE u.username = ?1")
+    void updateAccountLockStatus(String username, boolean locked);
 
-    @Query(value = "SELECT username FROM dba_users WHERE account_status = 'EXPIRED'", nativeQuery = true)
-    List<String> findExpiredOracleUsers();
+    @Query(value = "SELECT profile FROM dba_users WHERE username = UPPER(?1)", nativeQuery = true)
+    String getUserProfile(String username);
 
-    // Application specific queries
-    @Query("SELECT u FROM User u WHERE u.passwordExpiryDate < :date")
-    List<User> findUsersWithExpiredPasswords(@Param("date") LocalDateTime date);
-
-    @Query("SELECT u FROM User u WHERE u.failedLoginAttempts >= :attempts")
-    List<User> findUsersExceedingFailedAttempts(@Param("attempts") int attempts);
-
-    // Tablespace related queries
-    @Query(value = "SELECT username FROM dba_users WHERE default_tablespace = :tablespace", nativeQuery = true)
-    List<String> findUsersByTablespace(@Param("tablespace") String tablespace);
-
-    @Query(value = """
-            SELECT u.username 
-            FROM dba_users u 
-            JOIN dba_ts_quotas q ON u.username = q.username 
-            WHERE q.tablespace_name = :tablespace 
-            AND q.max_bytes > :quota
-            """, nativeQuery = true)
-    List<String> findUsersExceedingQuota(@Param("tablespace") String tablespace, @Param("quota") long quota);
-
-    // Role related queries
-    @Query(value = """
-            SELECT granted_role 
-            FROM dba_role_privs 
-            WHERE grantee = :username
-            """, nativeQuery = true)
-    List<String> findUserRoles(@Param("username") String username);
-
-    @Query(value = """
-            SELECT username 
-            FROM dba_role_privs 
-            WHERE granted_role = :role
-            """, nativeQuery = true)
-    List<String> findUsersWithRole(@Param("role") String role);
-
-    // Statistics and monitoring
-    @Query("SELECT COUNT(u) FROM User u WHERE u.accountLocked = true")
-    long countLockedUsers();
-
-    @Query(value = """
-            SELECT username 
-            FROM dba_users 
-            WHERE last_login < SYSDATE - :days
-            """, nativeQuery = true)
-    List<String> findInactiveUsers(@Param("days") int days);
+    @Query(value = "SELECT account_status FROM dba_users WHERE username = UPPER(?1)", nativeQuery = true)
+    String getAccountStatus(String username);
 }

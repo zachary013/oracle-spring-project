@@ -9,7 +9,7 @@ import java.util.Set;
 
 @Entity
 @Data
-public class User {
+public class OracleUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,6 +21,7 @@ public class User {
     private String defaultTablespace;
     private String temporaryTablespace;
     private String quotaLimit;
+
     private boolean accountLocked;
     private LocalDateTime passwordExpiryDate;
     private LocalDateTime lastLoginDate;
