@@ -1,16 +1,13 @@
 # Oracle SpringBoot NextJS Project
 
-A comprehensive project management system integrating Oracle Database, Spring Boot, and Next.js with real-time data visualization and reporting capabilities.
+A comprehensive database management system integrating Oracle Database, Spring Boot, and Next.js.
 
 ## Core Features
 
-- Real-time project status monitoring
-- Resource allocation tracking
-- Task management and scheduling
-- Performance analytics dashboard
-- Team collaboration tools
-- Document management system
-- Automated reporting
+- User Management (CRUD, Roles, Privileges)
+- DATA Backup and Recovery
+- Security
+- Query Optimization
 
 ## Technical Architecture
 
@@ -95,8 +92,8 @@ NEXTAUTH_SECRET=your-secret-key
 
 ## Contributors
 
-- [zachary013](https://github.com/zachary013) - Frontend Development
-- [Sam-jab](https://github.com/Sam-jab) - Backend Development
+- [zachary013](https://github.com/zachary013) 
+- [Sam-jab](https://github.com/Sam-jab) 
 
 ## License
 
