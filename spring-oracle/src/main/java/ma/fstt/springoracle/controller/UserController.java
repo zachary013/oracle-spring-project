@@ -1,7 +1,9 @@
 package ma.fstt.springoracle.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import ma.fstt.springoracle.dto.RoleRequest;
+import ma.fstt.springoracle.dto.PasswordResetRequest;
+import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
 import ma.fstt.springoracle.service.UserService;
@@ -18,7 +20,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<OracleUser> createUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<OracleUser> createUser(@Valid @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.createUser(userDTO));
     }
 
@@ -62,16 +64,16 @@ public class UserController {
     @PostMapping("/{username}/password")
     public ResponseEntity<Void> resetPassword(
             @PathVariable String username,
-            @RequestBody String newPassword) {
-        userService.resetPassword(username, newPassword);
+            @RequestBody PasswordResetRequest request) {
+        userService.resetPassword(username, request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{username}/roles")
     public ResponseEntity<?> grantRole(
             @PathVariable String username,
-            @RequestBody RoleRequest roleRequest) {
-        userService.grantRole(username, roleRequest.getRoleName());
+            @Valid @RequestBody RoleDTO roleDTO) {
+        userService.grantRole(username, roleDTO.getName());
         return ResponseEntity.ok().build();
     }
 
