@@ -2,6 +2,7 @@ package ma.fstt.springoracle.service;
 
 import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.model.Role;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -14,4 +15,8 @@ public interface RoleService {
     void grantPrivilege(String roleName, String privilegeName);
     void revokePrivilege(String roleName, String privilegeName);
     Set<String> getRolePrivileges(String roleName);
+    void grantPrivileges(String roleName, Set<String> privilegeNames);
+    boolean hasPrivilege(String roleName, String privilegeName);
+    List<String> getAvailablePrivileges();
 }
+
