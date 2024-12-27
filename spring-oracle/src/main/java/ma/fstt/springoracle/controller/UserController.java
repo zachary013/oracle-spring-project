@@ -1,6 +1,8 @@
 package ma.fstt.springoracle.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import ma.fstt.springoracle.dto.PasswordResetRequest;
 import ma.fstt.springoracle.dto.RoleRequest;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
@@ -18,7 +20,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<OracleUser> createUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<OracleUser> createUser(@Valid @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.createUser(userDTO));
     }
 
@@ -62,8 +64,8 @@ public class UserController {
     @PostMapping("/{username}/password")
     public ResponseEntity<Void> resetPassword(
             @PathVariable String username,
-            @RequestBody String newPassword) {
-        userService.resetPassword(username, newPassword);
+            @RequestBody PasswordResetRequest request) {
+        userService.resetPassword(username, request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 

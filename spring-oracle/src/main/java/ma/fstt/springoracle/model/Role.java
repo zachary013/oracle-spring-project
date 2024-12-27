@@ -2,12 +2,11 @@ package ma.fstt.springoracle.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
 @Entity
+@Data
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,6 +14,8 @@ public class Role {
 
     @Column(unique = true, nullable = false)
     private String name;
+
+    private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
