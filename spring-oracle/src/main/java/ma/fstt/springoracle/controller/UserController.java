@@ -3,7 +3,7 @@ package ma.fstt.springoracle.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import ma.fstt.springoracle.dto.PasswordResetRequest;
-import ma.fstt.springoracle.dto.RoleRequest;
+import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
 import ma.fstt.springoracle.service.UserService;
@@ -72,8 +72,8 @@ public class UserController {
     @PostMapping("/{username}/roles")
     public ResponseEntity<?> grantRole(
             @PathVariable String username,
-            @RequestBody RoleRequest roleRequest) {
-        userService.grantRole(username, roleRequest.getRoleName());
+            @Valid @RequestBody RoleDTO roleDTO) {
+        userService.grantRole(username, roleDTO.getName());
         return ResponseEntity.ok().build();
     }
 
