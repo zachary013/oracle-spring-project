@@ -18,6 +18,7 @@ public interface UserService {
     //Account Status
     void lockAccount(String username);
     void unlockAccount(String username);
+
     void resetPassword(String username, String newPassword);
     void setQuota(String username, String tablespace, String quota);
 
