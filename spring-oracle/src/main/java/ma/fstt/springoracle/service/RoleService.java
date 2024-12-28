@@ -12,10 +12,11 @@ public interface RoleService {
     Optional<Role> getRole(String name);
     List<Role> getAllRoles();
     void deleteRole(String name);
+
     void grantPrivilege(String roleName, String privilegeName);
+    void grantPrivileges(String roleName, Set<String> privilegeNames);
     void revokePrivilege(String roleName, String privilegeName);
     Set<String> getRolePrivileges(String roleName);
-    void grantPrivileges(String roleName, Set<String> privilegeNames);
     boolean hasPrivilege(String roleName, String privilegeName);
     List<String> getAvailablePrivileges();
 }
