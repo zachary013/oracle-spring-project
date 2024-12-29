@@ -136,49 +136,116 @@ public class RmanServiceImpl implements RmanService {
         return backupHistoryRepository.findAll();
     }
 
+//    public String performRestore() {
+//        String result = "Restore Failed"; // Default result message
+//        String result_backup_history = "Restore Failed";
+//        String status = "FAILURE";
+//
+//        try {
+//            // Command to execute the RMAN restore script inside the Docker container
+//            String command = "docker exec spring-oracle-oracle-1 rman target / cmdfile=/tmp/restore_script.rman";
+//
+//            // Start the process
+//            Process process = Runtime.getRuntime().exec(command);
+//
+//            // Capture standard and error outputs using try-with-resources
+//            StringBuilder output = new StringBuilder();
+//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+//
+//                String line;
+//                // Read standard output
+//                while ((line = reader.readLine()) != null) {
+//                    output.append(line).append("\n");
+//                }
+//
+//                // Read error output
+//                while ((line = errorReader.readLine()) != null) {
+//                    output.append("ERROR: ").append(line).append("\n");
+//                }
+//            }
+//
+//            // Wait for the process to complete
+//            int exitCode = process.waitFor();
+//
+//            // Update result based on exit code
+//            if (exitCode == 0) {
+//                result = "Restore Successful\n" + output.toString();
+//                result_backup_history = "Restore done Successfully";
+//                status = "SUCCESS";
+//            } else {
+//                result = "Restore Failed with exit code: " + exitCode + "\n" + output.toString();
+//            }
+//        } catch (IOException | InterruptedException e) {
+//            // Handle exceptions during execution
+//            result = "Error during restore execution: " + e.getMessage();
+//        }
+//
+//        // Log the restore operation in backup history
+//        backupHistoryRepository.save(new BackupHistory("RESTORE", status, LocalDateTime.now(), result_backup_history));
+//
+//        return result;
+//    }
+
+
     public String performRestore() {
-        String result = "Restore Failed"; // Default result message
+        String result = "Restore Failed";
         String result_backup_history = "Restore Failed";
         String status = "FAILURE";
 
         try {
-            // Command to execute the RMAN restore script inside the Docker container
-            String command = "docker exec spring-oracle-oracle-1 rman target / cmdfile=/tmp/restore_script.rman";
+            // Step 1: Execute RMAN restore script
+            String rmanCommand = "docker exec spring-oracle-oracle-1 rman target / cmdfile=/tmp/restore_script.rman";
+            Process rmanProcess = Runtime.getRuntime().exec(rmanCommand);
 
-            // Start the process
-            Process process = Runtime.getRuntime().exec(command);
-
-            // Capture standard and error outputs using try-with-resources
             StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(rmanProcess.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(rmanProcess.getErrorStream()))) {
 
                 String line;
-                // Read standard output
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
                 }
-
-                // Read error output
                 while ((line = errorReader.readLine()) != null) {
                     output.append("ERROR: ").append(line).append("\n");
                 }
             }
 
-            // Wait for the process to complete
-            int exitCode = process.waitFor();
+            int rmanExitCode = rmanProcess.waitFor();
+            if (rmanExitCode != 0) {
+                return "Restore failed with exit code: " + rmanExitCode + "\n" + output.toString();
+            }
 
-            // Update result based on exit code
-            if (exitCode == 0) {
-                result = "Restore Successful\n" + output.toString();
-                result_backup_history = "Restore done Successfully";
+            // Step 2: Execute the SQL script to open the database
+//            String sqlCommand = "docker exec -i spring-oracle-oracle-1 sqlplus / as sysdba @/tmp/open_db.sql";
+            String sqlCommand = "docker exec -i spring-oracle-oracle-1 sqlplus / as sysdba cmdfile=/tmp/open_db.sql";
+//            String sqlCommand = "docker exec -i spring-oracle-oracle-1 sqlplus \"/ as sysdba\" @/tmp/open_db.sql";
+
+            Process sqlProcess = Runtime.getRuntime().exec(sqlCommand);
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(sqlProcess.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(sqlProcess.getErrorStream()))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+                while ((line = errorReader.readLine()) != null) {
+                    output.append("ERROR: ").append(line).append("\n");
+                }
+            }
+
+            int sqlExitCode = sqlProcess.waitFor();
+            if (sqlExitCode == 0) {
+                result = "Restore and database open successful\n" + output.toString();
+                result_backup_history = "Restore and open done successfully";
                 status = "SUCCESS";
             } else {
-                result = "Restore Failed with exit code: " + exitCode + "\n" + output.toString();
+                result = "Failed to open the database with exit code: " + sqlExitCode + "\n" + output.toString();
             }
+
         } catch (IOException | InterruptedException e) {
-            // Handle exceptions during execution
-            result = "Error during restore execution: " + e.getMessage();
+            result = "Error during restore and open execution: " + e.getMessage();
         }
 
         // Log the restore operation in backup history
