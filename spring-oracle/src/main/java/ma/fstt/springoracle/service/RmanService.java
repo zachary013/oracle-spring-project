@@ -1,17 +1,17 @@
 package ma.fstt.springoracle.service;
 
+import ma.fstt.springoracle.model.BackupHistory;
+
 import java.util.List;
 
 public interface RmanService {
 
-    public List<String> listBackups();
+    public List<BackupHistory> listBackups();
 
-    public void scheduledBackup();
+    public String performRestore() ;
 
-    public void restoreDatabase(String backupFile);
+    public String performIncrementalBackup(int level) ;
 
-    public void performIncrementalBackup();
-
-    public void performFullBackup();
+    public String performFullBackup();
 
 }
