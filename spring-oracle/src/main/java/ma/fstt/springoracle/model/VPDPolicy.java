@@ -25,7 +25,8 @@ public class VPDPolicy {
     @Column(nullable = false)
     private String functionName;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column(columnDefinition = "CLOB")
     private String policyFunction;
 
     @Column(nullable = false)
