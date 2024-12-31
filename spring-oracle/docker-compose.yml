@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle-db:1521/ORCLPDB1
+      SPRING_DATASOURCE_USERNAME: system
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "8080:8080"
+
+  oracle-db:
+    image: database/enterprise:latest
+    environment:
+      ORACLE_PASSWORD: password
+      ORACLE_DATABASE: ORCLPDB1
+    ports:
+      - "1521:1521"
