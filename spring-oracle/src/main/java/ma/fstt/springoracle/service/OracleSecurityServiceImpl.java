@@ -33,6 +33,14 @@ public class OracleSecurityServiceImpl implements OracleSecurityService {
         }
 
         try {
+            // First check if wallet is open
+            String checkWalletSql = "SELECT STATUS FROM V$ENCRYPTION_WALLET";
+            String walletStatus = jdbcTemplate.queryForObject(checkWalletSql, String.class);
+
+            if (!"OPEN".equals(walletStatus)) {
+                throw new TDEConfigurationException("Encryption wallet is not open. Please contact database administrator.");
+            }
+
             String sql = String.format(
                     "ALTER TABLE %s MODIFY %s ENCRYPT USING '%s'",
                     tableName, columnName, algorithm
@@ -79,7 +87,12 @@ public class OracleSecurityServiceImpl implements OracleSecurityService {
     @Transactional
     public VPDPolicy createPolicy(VPDPolicy policy, String username) {
         if (vpdPolicyRepository.existsByPolicyName(policy.getPolicyName())) {
-            throw new VPDConfigurationException("Policy name already exists");
+            // Drop existing policy first
+            try {
+                dropPolicy(policy.getPolicyName());
+            } catch (Exception e) {
+                throw new VPDConfigurationException("Failed to drop existing policy", e);
+            }
         }
 
         try {
