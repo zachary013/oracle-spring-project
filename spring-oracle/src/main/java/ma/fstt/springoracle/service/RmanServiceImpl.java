@@ -136,58 +136,6 @@ public class RmanServiceImpl implements RmanService {
         return backupHistoryRepository.findAll();
     }
 
-//    public String performRestore() {
-//        String result = "Restore Failed"; // Default result message
-//        String result_backup_history = "Restore Failed";
-//        String status = "FAILURE";
-//
-//        try {
-//            // Command to execute the RMAN restore script inside the Docker container
-//            String command = "docker exec spring-oracle-oracle-1 rman target / cmdfile=/tmp/restore_script.rman";
-//
-//            // Start the process
-//            Process process = Runtime.getRuntime().exec(command);
-//
-//            // Capture standard and error outputs using try-with-resources
-//            StringBuilder output = new StringBuilder();
-//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-//
-//                String line;
-//                // Read standard output
-//                while ((line = reader.readLine()) != null) {
-//                    output.append(line).append("\n");
-//                }
-//
-//                // Read error output
-//                while ((line = errorReader.readLine()) != null) {
-//                    output.append("ERROR: ").append(line).append("\n");
-//                }
-//            }
-//
-//            // Wait for the process to complete
-//            int exitCode = process.waitFor();
-//
-//            // Update result based on exit code
-//            if (exitCode == 0) {
-//                result = "Restore Successful\n" + output.toString();
-//                result_backup_history = "Restore done Successfully";
-//                status = "SUCCESS";
-//            } else {
-//                result = "Restore Failed with exit code: " + exitCode + "\n" + output.toString();
-//            }
-//        } catch (IOException | InterruptedException e) {
-//            // Handle exceptions during execution
-//            result = "Error during restore execution: " + e.getMessage();
-//        }
-//
-//        // Log the restore operation in backup history
-//        backupHistoryRepository.save(new BackupHistory("RESTORE", status, LocalDateTime.now(), result_backup_history));
-//
-//        return result;
-//    }
-
-
     public String performRestore() {
         String result = "Restore Failed";
         String result_backup_history = "Restore Failed";
