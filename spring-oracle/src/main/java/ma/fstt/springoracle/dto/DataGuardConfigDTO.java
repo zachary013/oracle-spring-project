@@ -16,4 +16,6 @@ public class DataGuardConfigDTO {
     private int standbyPort;
     private String sysdbaUsername;
     private String sysdbaPassword;
+    private String primaryDbName;   // New field for primary database name
+    private String standbyDbName; // New field for standby database name
 }

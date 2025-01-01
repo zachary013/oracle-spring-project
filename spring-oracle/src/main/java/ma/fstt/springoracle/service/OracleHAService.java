@@ -3,13 +3,13 @@ package ma.fstt.springoracle.service;
 import ma.fstt.springoracle.dto.*;
 
 public interface OracleHAService {
-    DataGuardStatusDTO getDataGuardStatus();
+    public DataGuardStatusDTO getDataGuardStatus();
 
-    void configureDataGuard(DataGuardConfigDTO config);
+    public void configureDataGuard(DataGuardConfigDTO config);
 
-    HaOperationResponseDTO simulateFailover();
+    public HaOperationResponseDTO simulateFailover();
 
-    HaOperationResponseDTO simulateSwitchback();
+    public HaOperationResponseDTO simulateSwitchback();
 
-    AvailabilityReportDTO generateAvailabilityReport(String startDate, String endDate);
+    public AvailabilityReportDTO generateAvailabilityReport(String startDate, String endDate);
 }

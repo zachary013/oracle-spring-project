@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
 import java.util.Date;
 
 @Service
@@ -46,7 +45,6 @@ public class OracleHAServiceImpl implements OracleHAService {
                 }
                 return null;
             });
-
         } catch (Exception e) {
             logger.error("Error getting Data Guard status: " + e.getMessage(), e);
             return DataGuardStatusDTO.builder()
@@ -61,12 +59,11 @@ public class OracleHAServiceImpl implements OracleHAService {
     public void configureDataGuard(DataGuardConfigDTO config) {
         try {
             validateConfig(config);
-
-            String configurePrimarySql = """
+            String sql = """
                 BEGIN
                     DBMS_DG.INITIATE_FS_FAILOVER(
-                        primary_db_name => ?,
-                        standby_db_name => ?,
+                        primary_db_name => 'PRIMARY_DB',
+                        standby_db_name => 'STANDBY_DB',
                         primary_host => ?,
                         primary_port => ?,
                         standby_host => ?,
@@ -75,13 +72,13 @@ public class OracleHAServiceImpl implements OracleHAService {
                 END;
             """;
 
-            jdbcTemplate.update(configurePrimarySql,
-                    "PRIMARY_DB", "STANDBY_DB",
-                    config.getPrimaryHost(), config.getPrimaryPort(),
-                    config.getStandbyHost(), config.getStandbyPort());
+            jdbcTemplate.update(sql,
+                    config.getPrimaryHost(),
+                    config.getPrimaryPort(),
+                    config.getStandbyHost(),
+                    config.getStandbyPort());
 
             logger.info("Data Guard configuration completed successfully");
-
         } catch (Exception e) {
             logger.error("Error configuring Data Guard: " + e.getMessage(), e);
             throw new RuntimeException("Failed to configure Data Guard: " + e.getMessage());
@@ -91,25 +88,12 @@ public class OracleHAServiceImpl implements OracleHAService {
     @Override
     public HaOperationResponseDTO simulateFailover() {
         try {
-            logger.info("Starting failover simulation");
             long startTime = System.currentTimeMillis();
 
-            simulateNetworkPartition();
-
-            String failoverSql = """
-                BEGIN
-                    DBMS_DG.SIMULATE_FAILOVER(
-                        failover_type => 'IMMEDIATE',
-                        target_role => 'PRIMARY'
-                    );
-                END;
-            """;
-
-            jdbcTemplate.execute(failoverSql);
+            String sql = "BEGIN DBMS_DG.INITIATE_FAILOVER(); END;";
+            jdbcTemplate.execute(sql);
 
             long executionTime = System.currentTimeMillis() - startTime;
-
-            logSimulationResult("FAILOVER", executionTime, true);
 
             return HaOperationResponseDTO.builder()
                     .success(true)
@@ -117,7 +101,6 @@ public class OracleHAServiceImpl implements OracleHAService {
                     .message("Failover simulation completed successfully")
                     .timestamp(new Date())
                     .build();
-
         } catch (Exception e) {
             logger.error("Failover simulation failed: " + e.getMessage(), e);
             return HaOperationResponseDTO.builder()
@@ -131,23 +114,12 @@ public class OracleHAServiceImpl implements OracleHAService {
     @Override
     public HaOperationResponseDTO simulateSwitchback() {
         try {
-            logger.info("Starting switchback simulation");
             long startTime = System.currentTimeMillis();
 
-            String switchbackSql = """
-                BEGIN
-                    DBMS_DG.SIMULATE_SWITCHOVER(
-                        target_role => 'PRIMARY',
-                        wait_for_completion => TRUE
-                    );
-                END;
-            """;
-
-            jdbcTemplate.execute(switchbackSql);
+            String sql = "BEGIN DBMS_DG.INITIATE_SWITCHOVER(); END;";
+            jdbcTemplate.execute(sql);
 
             long executionTime = System.currentTimeMillis() - startTime;
-
-            logSimulationResult("SWITCHBACK", executionTime, true);
 
             return HaOperationResponseDTO.builder()
                     .success(true)
@@ -155,7 +127,6 @@ public class OracleHAServiceImpl implements OracleHAService {
                     .message("Switchback simulation completed successfully")
                     .timestamp(new Date())
                     .build();
-
         } catch (Exception e) {
             logger.error("Switchback simulation failed: " + e.getMessage(), e);
             return HaOperationResponseDTO.builder()
@@ -172,57 +143,37 @@ public class OracleHAServiceImpl implements OracleHAService {
             String sql = """
                 SELECT 
                     COUNT(*) as total_simulations,
-                    AVG(CASE 
-                        WHEN simulation_type = 'FAILOVER' THEN execution_time 
-                    END) as avg_failover_time,
-                    AVG(CASE 
-                        WHEN simulation_type = 'SWITCHBACK' THEN execution_time 
-                    END) as avg_switchback_time,
-                    COUNT(CASE 
-                        WHEN simulation_type = 'FAILOVER' AND status = 'SUCCESS' 
-                        THEN 1 
-                    END) as successful_failovers,
-                    COUNT(CASE 
-                        WHEN simulation_type = 'SWITCHBACK' AND status = 'SUCCESS' 
-                        THEN 1 
-                    END) as successful_switchbacks
-                FROM ha_simulation_log
-                WHERE simulation_date BETWEEN TO_DATE(?, 'YYYY-MM-DD') 
-                AND TO_DATE(?, 'YYYY-MM-DD')
+                    COUNT(CASE WHEN type = 'FAILOVER' AND success = 1 THEN 1 END) as successful_failovers,
+                    COUNT(CASE WHEN type = 'SWITCHBACK' AND success = 1 THEN 1 END) as successful_switchbacks,
+                    AVG(CASE WHEN type = 'FAILOVER' THEN execution_time END) as avg_failover_time,
+                    AVG(CASE WHEN type = 'SWITCHBACK' THEN execution_time END) as avg_switchback_time
+                FROM ha_operations_log
+                WHERE operation_date BETWEEN TO_DATE(?, 'YYYY-MM-DD') AND TO_DATE(?, 'YYYY-MM-DD')
             """;
 
-            return jdbcTemplate.query(sql, new Object[]{startDate, endDate}, rs -> {
-                if (rs.next()) {
-                    int totalSimulations = rs.getInt("total_simulations");
-                    int successfulFailovers = rs.getInt("successful_failovers");
-                    int successfulSwitchbacks = rs.getInt("successful_switchbacks");
+            return jdbcTemplate.queryForObject(sql,
+                    (rs, rowNum) -> {
+                        int total = rs.getInt("total_simulations");
+                        int successFailovers = rs.getInt("successful_failovers");
+                        int successSwitchbacks = rs.getInt("successful_switchbacks");
 
-                    double failoverSuccessRate = totalSimulations > 0
-                            ? (successfulFailovers * 100.0 / totalSimulations)
-                            : 0.0;
-                    double switchbackSuccessRate = totalSimulations > 0
-                            ? (successfulSwitchbacks * 100.0 / totalSimulations)
-                            : 0.0;
-
-                    return AvailabilityReportDTO.builder()
-                            .totalSimulations(totalSimulations)
-                            .avgFailoverTimeMs(rs.getDouble("avg_failover_time"))
-                            .avgSwitchbackTimeMs(rs.getDouble("avg_switchback_time"))
-                            .successfulFailovers(successfulFailovers)
-                            .successfulSwitchbacks(successfulSwitchbacks)
-                            .failoverSuccessRate(Math.round(failoverSuccessRate * 100.0) / 100.0)
-                            .switchbackSuccessRate(Math.round(switchbackSuccessRate * 100.0) / 100.0)
-                            .startDate(startDate)
-                            .endDate(endDate)
-                            .build();
-                }
-                return null;
-            });
-
+                        return AvailabilityReportDTO.builder()
+                                .totalSimulations(total)
+                                .successfulFailovers(successFailovers)
+                                .successfulSwitchbacks(successSwitchbacks)
+                                .avgFailoverTimeMs(rs.getDouble("avg_failover_time"))
+                                .avgSwitchbackTimeMs(rs.getDouble("avg_switchback_time"))
+                                .failoverSuccessRate(calculateRate(successFailovers, total))
+                                .switchbackSuccessRate(calculateRate(successSwitchbacks, total))
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .build();
+                    },
+                    startDate, endDate);
         } catch (Exception e) {
-            logger.error("Error generating availability report: " + e.getMessage(), e);
+            logger.error("Error generating report: " + e.getMessage(), e);
             return AvailabilityReportDTO.builder()
-                    .error(e.getMessage())
+                    .error("Failed to generate report: " + e.getMessage())
                     .startDate(startDate)
                     .endDate(endDate)
                     .build();
@@ -244,23 +195,7 @@ public class OracleHAServiceImpl implements OracleHAService {
         }
     }
 
-    private void simulateNetworkPartition() {
-        logger.info("Simulating network partition between primary and standby");
-        try {
-            Thread.sleep(2000); // Simulate 2-second network delay
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private void logSimulationResult(String simulationType, long executionTime, boolean success) {
-        String sql = """
-            INSERT INTO ha_simulation_log 
-            (simulation_type, execution_time, status, simulation_date)
-            VALUES (?, ?, ?, SYSDATE)
-        """;
-
-        jdbcTemplate.update(sql, simulationType, executionTime,
-                success ? "SUCCESS" : "FAILURE");
+    private double calculateRate(int success, int total) {
+        return total > 0 ? (success * 100.0 / total) : 0.0;
     }
 }
