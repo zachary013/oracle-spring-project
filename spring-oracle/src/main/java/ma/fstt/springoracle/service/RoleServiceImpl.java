@@ -6,7 +6,6 @@ import ma.fstt.springoracle.model.Privilege;
 import ma.fstt.springoracle.model.Role;
 import ma.fstt.springoracle.repository.PrivilegeRepository;
 import ma.fstt.springoracle.repository.RoleRepository;
-import ma.fstt.springoracle.service.RoleService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,15 +35,17 @@ public class RoleServiceImpl implements RoleService {
         role.setDescription(roleDTO.getDescription());
 
         if (roleDTO.getPrivileges() != null && !roleDTO.getPrivileges().isEmpty()) {
-            Set<Privilege> privileges = roleDTO.getPrivileges().stream()
-                    .map(privilegeName -> privilegeRepository.findByName(privilegeName)
-                            .orElseThrow(() -> new RuntimeException("Privilege not found: " + privilegeName)))
+            Set<String> validPrivileges = validateAndGetOraclePrivileges(roleDTO.getPrivileges());
+
+            validPrivileges.forEach(privilege ->
+                    jdbcTemplate.execute("GRANT " + privilege + " TO " + roleDTO.getName())
+            );
+
+            // Store only validated privileges in the database
+            Set<Privilege> privileges = validPrivileges.stream()
+                    .map(this::getOrCreatePrivilege)
                     .collect(Collectors.toSet());
             role.setPrivileges(privileges);
-
-            privileges.forEach(privilege ->
-                    jdbcTemplate.execute("GRANT " + privilege.getName() + " TO " + roleDTO.getName())
-            );
         }
 
         return roleRepository.save(role);
@@ -74,11 +75,13 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
 
-        Privilege privilege = privilegeRepository.findByName(privilegeName)
-                .orElseThrow(() -> new RuntimeException("Privilege not found: " + privilegeName));
+        // Validate if the privilege exists in Oracle
+        validateAndGetOraclePrivileges(Collections.singleton(privilegeName));
 
         jdbcTemplate.execute("GRANT " + privilegeName + " TO " + roleName);
 
+        // Update the role's privileges in the database
+        Privilege privilege = getOrCreatePrivilege(privilegeName);
         role.getPrivileges().add(privilege);
         roleRepository.save(role);
     }
@@ -88,15 +91,16 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
 
-        Set<Privilege> privileges = privilegeNames.stream()
-                .map(name -> privilegeRepository.findByName(name)
-                        .orElseThrow(() -> new RuntimeException("Privilege not found: " + name)))
-                .collect(Collectors.toSet());
+        Set<String> validPrivileges = validateAndGetOraclePrivileges(privilegeNames);
 
-        privilegeNames.forEach(privilegeName ->
+        validPrivileges.forEach(privilegeName ->
                 jdbcTemplate.execute("GRANT " + privilegeName + " TO " + roleName)
         );
 
+        // Update the role's privileges in the database
+        Set<Privilege> privileges = validPrivileges.stream()
+                .map(this::getOrCreatePrivilege)
+                .collect(Collectors.toSet());
         role.getPrivileges().addAll(privileges);
         roleRepository.save(role);
     }
@@ -132,11 +136,31 @@ public class RoleServiceImpl implements RoleService {
         return count != null && count > 0;
     }
 
-    @Override
-    public List<String> getAvailablePrivileges() {
-        return jdbcTemplate.queryForList(
+    private Set<String> validateAndGetOraclePrivileges(Set<String> privilegeNames) {
+        // Query Oracle system privileges
+        List<String> validOraclePrivileges = jdbcTemplate.queryForList(
                 "SELECT DISTINCT PRIVILEGE FROM DBA_SYS_PRIVS",
                 String.class
         );
+
+        // Validate privileges
+        Set<String> invalidPrivileges = privilegeNames.stream()
+                .filter(privilege -> !validOraclePrivileges.contains(privilege))
+                .collect(Collectors.toSet());
+
+        if (!invalidPrivileges.isEmpty()) {
+            throw new RuntimeException("Invalid Oracle privileges: " + String.join(", ", invalidPrivileges));
+        }
+
+        return privilegeNames;
+    }
+
+    private Privilege getOrCreatePrivilege(String privilegeName) {
+        return privilegeRepository.findByName(privilegeName)
+                .orElseGet(() -> {
+                    Privilege newPrivilege = new Privilege();
+                    newPrivilege.setName(privilegeName);
+                    return privilegeRepository.save(newPrivilege);
+                });
     }
 }

@@ -78,8 +78,4 @@ public class RoleController {
         return ResponseEntity.ok(roleService.hasPrivilege(roleName, privilegeName));
     }
 
-    @GetMapping("/available-privileges")
-    public ResponseEntity<List<String>> getAvailablePrivileges() {
-        return ResponseEntity.ok(roleService.getAvailablePrivileges());
-    }
 }

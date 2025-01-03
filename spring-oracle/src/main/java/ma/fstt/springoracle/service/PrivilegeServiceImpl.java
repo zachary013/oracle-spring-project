@@ -2,7 +2,6 @@ package ma.fstt.springoracle.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import ma.fstt.springoracle.dto.PrivilegeDTO;
 import ma.fstt.springoracle.exception.PrivilegeOperationException;
 import ma.fstt.springoracle.model.Privilege;
 import ma.fstt.springoracle.repository.PrivilegeRepository;
@@ -22,29 +21,6 @@ public class PrivilegeServiceImpl implements PrivilegeService {
     private final PrivilegeRepository privilegeRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    @Override
-    @Transactional
-    public Privilege createPrivilege(PrivilegeDTO privilegeDTO) {
-        String privilegeName = privilegeDTO.getName().toUpperCase();
-        log.info("Attempting to create privilege: {}", privilegeName);
-
-        if (privilegeRepository.existsByName(privilegeName)) {
-            log.warn("Privilege already exists: {}", privilegeName);
-            throw new PrivilegeOperationException("Privilege already exists: " + privilegeName);
-        }
-
-        if (!validatePrivilegeExists(privilegeName)) {
-            log.warn("Invalid Oracle privilege: {}", privilegeName);
-            throw new PrivilegeOperationException("Invalid Oracle privilege: " + privilegeName);
-        }
-
-        Privilege privilege = new Privilege();
-        privilege.setName(privilegeName);
-        privilege.setDescription(privilegeDTO.getDescription());
-
-        log.info("Saving new privilege: {}", privilegeName);
-        return privilegeRepository.save(privilege);
-    }
 
     @Override
     public Optional<Privilege> getPrivilege(String name) {
@@ -53,24 +29,13 @@ public class PrivilegeServiceImpl implements PrivilegeService {
     }
 
     @Override
-    public List<Privilege> getAllPrivileges() {
-        log.info("Fetching all privileges");
-        return privilegeRepository.findAll();
+    public List<String> getAllPrivileges() {
+        return jdbcTemplate.queryForList(
+                "SELECT DISTINCT PRIVILEGE FROM DBA_SYS_PRIVS",
+                String.class
+        );
     }
 
-    @Override
-    @Transactional
-    public void deletePrivilege(String name) {
-        log.info("Attempting to delete privilege: {}", name);
-        privilegeRepository.findByName(name.toUpperCase())
-                .ifPresentOrElse(
-                        privilege -> {
-                            privilegeRepository.delete(privilege);
-                            log.info("Privilege deleted: {}", name);
-                        },
-                        () -> log.warn("Privilege not found for deletion: {}", name)
-                );
-    }
 
     @Override
     @Transactional
@@ -282,5 +247,6 @@ public class PrivilegeServiceImpl implements PrivilegeService {
             return false;
         }
     }
+
 }
 

@@ -18,6 +18,5 @@ public interface RoleService {
     void revokePrivilege(String roleName, String privilegeName);
     Set<String> getRolePrivileges(String roleName);
     boolean hasPrivilege(String roleName, String privilegeName);
-    List<String> getAvailablePrivileges();
 }
 

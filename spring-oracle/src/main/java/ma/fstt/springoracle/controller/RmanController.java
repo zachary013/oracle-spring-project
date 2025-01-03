@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rman")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class RmanController {
     @Autowired
     private RmanService rmanService;

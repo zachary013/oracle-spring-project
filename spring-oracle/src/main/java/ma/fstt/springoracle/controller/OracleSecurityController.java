@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/security")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class OracleSecurityController {
     private final OracleSecurityService securityService;
     private static final String DEFAULT_USER = "SYSTEM"; // Temporary solution
