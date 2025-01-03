@@ -14,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/performance")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class PerformanceMonitoringController {
     @Autowired
     private PerformanceMonitoringService monitoringService;

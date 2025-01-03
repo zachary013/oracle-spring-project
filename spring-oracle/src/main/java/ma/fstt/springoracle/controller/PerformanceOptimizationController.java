@@ -12,6 +12,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/performance/optimization")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class PerformanceOptimizationController {
 
     @Autowired

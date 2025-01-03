@@ -11,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/privileges")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class PrivilegeController {
 
     private final PrivilegeService privilegeService;
