@@ -45,4 +45,5 @@ public class PerformanceMonitoringController {
     public ResponseEntity<PerformanceMetrics> getRealTimeMetrics() {
         return ResponseEntity.ok(monitoringService.getRealTimeMetrics());
     }
+
 }
