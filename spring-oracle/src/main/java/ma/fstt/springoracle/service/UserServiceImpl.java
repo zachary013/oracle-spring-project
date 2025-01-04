@@ -98,9 +98,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(String username) {
-        jdbcTemplate.execute(String.format("DROP USER %s CASCADE", username));
-        userRepository.findByUsername(username)
-                .ifPresent(user -> userRepository.delete(user));
+        try {
+            // Drop the user directly with CASCADE
+            jdbcTemplate.execute(String.format("DROP USER \"%s\" CASCADE", username));
+
+            // Remove from repository
+            userRepository.findByUsername(username)
+                    .ifPresent(user -> userRepository.delete(user));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete user: " + e.getMessage());
+        }
     }
 
     @Override
