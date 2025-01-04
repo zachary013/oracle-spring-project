@@ -1,6 +1,7 @@
 package ma.fstt.springoracle.service;
 
 import lombok.RequiredArgsConstructor;
+import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
 import ma.fstt.springoracle.model.Role;
@@ -188,57 +189,103 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    // UserServiceImpl.java
     @Override
     @Transactional
     public void grantRole(String username, String roleName) {
         try {
-            // First try to grant the role in Oracle
-            String sql = String.format("GRANT \"%s\" TO \"%s\"",
-                    roleName.toUpperCase(),
-                    username.toUpperCase()
-            );
-            jdbcTemplate.execute(sql);
+            if (username == null || roleName == null) {
+                throw new IllegalArgumentException("Username and role name cannot be null");
+            }
 
-            // If Oracle grant succeeds, update application database
-            userRepository.findByUsername(username.toUpperCase())
-                    .ifPresent(user -> {
-                        // Get or create role
-                        Role role = roleRepository.findByName(roleName.toUpperCase())
-                                .orElseGet(() -> {
-                                    Role newRole = new Role();
-                                    newRole.setName(roleName.toUpperCase());
-                                    return roleRepository.save(newRole);
-                                });
+            // First check if it's a custom role in our repository
+            Optional<Role> customRole = roleRepository.findByName(roleName.toUpperCase());
 
-                        user.getRoles().add(role);
-                        userRepository.save(user);
-                    });
+            if (customRole.isPresent()) {
+                // Handle custom role from repository
+                userRepository.findByUsername(username.toUpperCase())
+                        .ifPresent(user -> {
+                            user.getRoles().add(customRole.get());
+                            userRepository.save(user);
+                        });
+            } else {
+                // Try to grant as Oracle system role
+                try {
+                    String sql = String.format("GRANT \"%s\" TO \"%s\"",
+                            roleName.toUpperCase(),
+                            username.toUpperCase()
+                    );
+                    jdbcTemplate.execute(sql);
+                } catch (Exception e) {
+                    throw new RuntimeException("Role " + roleName + " not found in repository or not a valid Oracle role", e);
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to grant role: " + e.getMessage(), e);
         }
     }
 
+    @Override
+    @Transactional
+    public void grantMultipleRoles(String username, List<RoleDTO> roles) {
+        try {
+            for (RoleDTO roleDTO : roles) {
+                // Try repository role first
+                Optional<Role> customRole = roleRepository.findByName(roleDTO.getName().toUpperCase());
+
+                if (customRole.isPresent()) {
+                    // Handle custom role from repository
+                    userRepository.findByUsername(username.toUpperCase())
+                            .ifPresent(user -> {
+                                user.getRoles().add(customRole.get());
+                                userRepository.save(user);
+                            });
+                } else {
+                    // Try Oracle system role
+                    try {
+                        String sql = String.format("GRANT \"%s\" TO \"%s\"",
+                                roleDTO.getName().toUpperCase(),
+                                username.toUpperCase()
+                        );
+                        jdbcTemplate.execute(sql);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Role " + roleDTO.getName() +
+                                " not found in repository or not a valid Oracle role", e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to grant roles: " + e.getMessage(), e);
+        }
+    }
 
     @Override
     @Transactional
     public void revokeRole(String username, String roleName) {
         try {
-            // First try to revoke in Oracle
-            String sql = String.format("REVOKE \"%s\" FROM \"%s\"",
-                    roleName.toUpperCase(),
-                    username.toUpperCase()
-            );
-            jdbcTemplate.execute(sql);
+            // Check repository role first
+            Optional<Role> customRole = roleRepository.findByName(roleName.toUpperCase());
 
-            // If Oracle revoke succeeds, update application database
-            userRepository.findByUsername(username.toUpperCase())
-                    .ifPresent(user -> {
-                        roleRepository.findByName(roleName.toUpperCase())
-                                .ifPresent(role -> {
-                                    user.getRoles().remove(role);
-                                    userRepository.save(user);
-                                });
-                    });
+            if (customRole.isPresent()) {
+                // Handle custom role from repository
+                userRepository.findByUsername(username.toUpperCase())
+                        .ifPresent(user -> {
+                            user.getRoles().remove(customRole.get());
+                            userRepository.save(user);
+                        });
+            } else {
+                // Try to revoke Oracle system role
+                try {
+                    String sql = String.format("REVOKE \"%s\" FROM \"%s\"",
+                            roleName.toUpperCase(),
+                            username.toUpperCase()
+                    );
+                    jdbcTemplate.execute(sql);
+                } catch (Exception e) {
+                    throw new RuntimeException("Role " + roleName +
+                            " not found in repository or not a valid Oracle role", e);
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to revoke role: " + e.getMessage(), e);
         }

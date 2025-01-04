@@ -1,7 +1,6 @@
 package ma.fstt.springoracle.controller;
 
 import lombok.RequiredArgsConstructor;
-import ma.fstt.springoracle.dto.PrivilegeDTO;
 import ma.fstt.springoracle.model.Privilege;
 import ma.fstt.springoracle.service.PrivilegeService;
 import org.springframework.http.ResponseEntity;

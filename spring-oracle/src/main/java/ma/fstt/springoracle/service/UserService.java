@@ -1,5 +1,6 @@
 package ma.fstt.springoracle.service;
 
+import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,5 +30,6 @@ public interface UserService {
 
     //Roles
     void grantRole(String username, String roleName);
+    void grantMultipleRoles(String username, List<RoleDTO> roles);
     void revokeRole(String username, String roleName);
 }

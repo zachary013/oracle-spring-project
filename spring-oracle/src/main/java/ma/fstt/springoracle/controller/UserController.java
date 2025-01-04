@@ -71,15 +71,23 @@ public class UserController {
     }
 
     @PostMapping("/{username}/roles")
-    public ResponseEntity<?> grantRole(
+    public ResponseEntity<Void> grantRole(
             @PathVariable String username,
             @Valid @RequestBody RoleDTO roleDTO) {
         userService.grantRole(username, roleDTO.getName());
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{username}/roles/bulk")
+    public ResponseEntity<Void> grantMultipleRoles(
+            @PathVariable String username,
+            @Valid @RequestBody List<RoleDTO> roles) {
+        userService.grantMultipleRoles(username, roles);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{username}/roles/{roleName}")
-    public ResponseEntity<?> revokeRole(
+    public ResponseEntity<Void> revokeRole(
             @PathVariable String username,
             @PathVariable String roleName) {
         userService.revokeRole(username, roleName);
