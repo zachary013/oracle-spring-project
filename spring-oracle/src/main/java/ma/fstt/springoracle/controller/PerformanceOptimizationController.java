@@ -2,6 +2,7 @@ package ma.fstt.springoracle.controller;
 
 
 import lombok.RequiredArgsConstructor;
+import ma.fstt.springoracle.model.SlowQuery;
 import ma.fstt.springoracle.service.PerformanceOptimizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,17 +11,23 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/performance/optimization")
+@RequestMapping("/api/optimization")
 @RequiredArgsConstructor
 public class PerformanceOptimizationController {
-
     @Autowired
     private final PerformanceOptimizationService performanceOptimizationService;
 
-    @GetMapping("/slow-queries")
-    public ResponseEntity<List<Map<String, Object>>> getSlowQueries() {
-        return ResponseEntity.ok(performanceOptimizationService.getSlowQueries());
+    @GetMapping("/slowQueries")
+    public ResponseEntity<List<SlowQuery>> GetSlowQueries() {
+        return ResponseEntity.ok(performanceOptimizationService.identifySlowQueries());
     }
+
+
+    @PostMapping("/optimize-query/{queryId}")
+    public ResponseEntity<String> optimizeQuery(@PathVariable Long queryId) {
+        return ResponseEntity.ok(performanceOptimizationService.optimizeQuery(queryId));
+    }
+
 
     @GetMapping("/tuning-recommendations/{sqlId}")
     public ResponseEntity<Map<String, Object>> getTuningRecommendations(

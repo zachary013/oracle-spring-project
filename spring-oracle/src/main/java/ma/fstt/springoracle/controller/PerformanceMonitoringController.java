@@ -18,13 +18,6 @@ public class PerformanceMonitoringController {
     @Autowired
     private PerformanceMonitoringService monitoringService;
 
-//    @GetMapping("/awr")
-//    public ResponseEntity<Map<String, Object>> getAWRReport(
-//            @RequestParam LocalDateTime start,
-//            @RequestParam LocalDateTime end) {
-//        return ResponseEntity.ok(monitoringService.getAWRReport(start, end));
-//    }
-
     @GetMapping("/awr")
     public ResponseEntity<List<Map<String, Object>>> getAWRReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
