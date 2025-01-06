@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface PerformanceOptimizationService {
 
-    public Map<String, Object> getTuningRecommendations(String sqlId) ;
+//    public Map<String, Object> getTuningRecommendations(String sqlId) ;
 
     public void gatherTableStats(String schemaName, String tableName) ;
 
