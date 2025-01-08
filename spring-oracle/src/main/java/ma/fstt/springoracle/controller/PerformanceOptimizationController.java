@@ -29,11 +29,11 @@ public class PerformanceOptimizationController {
     }
 
 
-    @GetMapping("/tuning-recommendations/{sqlId}")
-    public ResponseEntity<Map<String, Object>> getTuningRecommendations(
-            @PathVariable String sqlId) {
-        return ResponseEntity.ok(performanceOptimizationService.getTuningRecommendations(sqlId));
-    }
+//    @GetMapping("/tuning-recommendations/{sqlId}")
+//    public ResponseEntity<Map<String, Object>> getTuningRecommendations(
+//            @PathVariable String sqlId) {
+//        return ResponseEntity.ok(performanceOptimizationService.getTuningRecommendations(sqlId));
+//    }
 
     @PostMapping("/gather-stats")
     public ResponseEntity<Void> gatherTableStats(

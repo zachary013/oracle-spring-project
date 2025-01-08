@@ -3,6 +3,7 @@ package ma.fstt.springoracle.controller;
 import lombok.RequiredArgsConstructor;
 import ma.fstt.springoracle.model.Privilege;
 import ma.fstt.springoracle.service.PrivilegeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ import java.util.List;
 @Validated
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class PrivilegeController {
-
+    @Autowired
     private final PrivilegeService privilegeService;
 
     @GetMapping

@@ -7,6 +7,7 @@ import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.dto.UserDTO;
 import ma.fstt.springoracle.model.OracleUser;
 import ma.fstt.springoracle.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class UserController {
-
+    @Autowired
     private final UserService userService;
 
     @PostMapping
