@@ -5,6 +5,7 @@ import ma.fstt.springoracle.model.AuditConfig;
 import ma.fstt.springoracle.model.TDEConfig;
 import ma.fstt.springoracle.model.VPDPolicy;
 import ma.fstt.springoracle.service.OracleSecurityService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +15,9 @@ import java.util.List;
 @RequestMapping("/api/security")
 @RequiredArgsConstructor
 public class OracleSecurityController {
+    @Autowired
     private final OracleSecurityService securityService;
+
     private static final String DEFAULT_USER = "SYSTEM"; // Temporary solution
 
     // TDE Endpoints

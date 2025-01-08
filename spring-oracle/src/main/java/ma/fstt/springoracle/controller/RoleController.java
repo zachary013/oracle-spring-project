@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import ma.fstt.springoracle.dto.RoleDTO;
 import ma.fstt.springoracle.model.Role;
 import ma.fstt.springoracle.service.RoleService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ import java.util.Set;
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class RoleController {
 
+    @Autowired
     private final RoleService roleService;
 
     @PostMapping
