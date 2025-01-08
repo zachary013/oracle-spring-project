@@ -28,13 +28,6 @@ public class PerformanceOptimizationController {
         return ResponseEntity.ok(performanceOptimizationService.optimizeQuery(queryId));
     }
 
-
-    @GetMapping("/tuning-recommendations/{sqlId}")
-    public ResponseEntity<Map<String, Object>> getTuningRecommendations(
-            @PathVariable String sqlId) {
-        return ResponseEntity.ok(performanceOptimizationService.getTuningRecommendations(sqlId));
-    }
-
     @PostMapping("/gather-stats")
     public ResponseEntity<Void> gatherTableStats(
             @RequestParam String schemaName,
