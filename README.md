@@ -1,6 +1,9 @@
 # Oracle SpringBoot NextJS Project
 
 A comprehensive database management system integrating Oracle Database, Spring Boot, and Next.js.
+<img src="photos/design.png" alt="User Management Interface" width="800"/>
+
+
 
 ## Core Features
 
