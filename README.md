@@ -48,7 +48,7 @@ A comprehensive database management system integrating Oracle Database, Spring B
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/project-name.git
+   git clone https://github.com/zachary013/oracle-spring-project.git
    ```
 
 2. Configure Oracle Database:
